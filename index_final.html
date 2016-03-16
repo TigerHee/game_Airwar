@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <title>HTML5版本的飞机大战</title>
+  <meta charset="utf-8" />
+ </head>
+
+ <body>
+  <!-- 定义<div>元素,作为容器 -->
+  <div style="margin:0 auto;width:480px; height:650px;background:#323232; text-align:center;vertical-align:middle">
+	<canvas id="canvas" width="480px" height="650px"></canvas>
+  </div>
+
+  <script src="supper.js"></script>
+  <script src="gameTool.js"></script>
+  <script src="gameData.js"></script>
+
+  <script>
+	(function(){
+		// 0 游戏初始化
+		var canvas = document.getElementById("canvas");
+		var context = canvas.getContext("2d");
+
+		const START = 0;
+		const STARTTING = 1;
+		const RUNNING = 2;
+		const PAUSED = 3;
+		const GAMEOVER = 4;
+
+		var game = {
+			width : canvas.width,//画布的宽度
+			height : canvas.height,//画布的高度
+			score : 0,//游戏得分
+			life : 3,//游戏的生命值
+			state : 0,
+			setState : function(status){
+				this.state = status;
+			},
+			getState : function(){
+				return this.state;
+			}
+		}
+
+		// 1 加载游戏所需的图片
+		//var arr = createImgs();
+
+		// 2 必要数据的初始化
+		var data = createData(datas.bg);
+
+		
+
+
+	function Bg(config){
+		Game.call(this,config);
+		this.y1 = 0;
+		this.y2 = -this.height;
+		this.paint = function(cxt){
+			cxt.drawImage(this.imgs,0,this.y1);
+			cxt.drawImage(this.imgs,0,this.y2);
+		}
+		this.step = function(){
+			this.y1++;
+			this.y2++;
+			if(this.y2 == 0){
+				this.y1 = -this.height;
+			}
+			if(this.y1 == 0){
+				this.y2 = -this.height;
+			}
+		}
+	}
+	function Loading(config){
+		Game.call(this,config);
+		this.paint = function(cxt){
+			cxt.drawImage(this.imgs[this.frameIndex],0,HEIGHT-this.height);
+		}
+		this.speed = 0;
+		this.step = function(){
+			this.speed++;
+			if(this.speed%3 == 0){
+				this.frameIndex++;
+			}
+			if(this.frameIndex == 4){
+				state = RUNNING;
+			}
+		}
+	}
+
+	function Hero(config){
+		Game.call(this,config);
+		this.x = (WIDTH-this.width)/2;
+		this.y = HEIGHT-this.height-30;
+		this.paint = function(cxt){
+			cxt.drawImage(this.imgs[this.frameIndex],this.x,this.y);
+		}
+		this.step = function(){
+			if(this.down){//爆破动画
+				this.frameIndex++;
+				if(this.frameIndex == this.sum){
+					this.frameIndex = this.sum - 1;
+					life--;
+					if(life == 0){
+						state = GAMEOVER;
+					}else{
+						hero = new Hero(HERO);
+					}
+				}
+			}else{//切换动画
+				this.frameIndex = (++this.frameIndex)%2;
+			}
+		}
+		// 射击方法
+		this.shoot = function(){
+			bullets[bullets.length] = new Bullet(BULLET);
+		}
+		// 撞击后的方法
+		this.canDown = function(){
+			this.down = true;//表示执行爆破动画
+			this.frameIndex = 2;//动画图片切换到爆破
+		}
+	}
+	function Bullet(config){
+		Game.call(this,config);
+		this.x = hero.x + hero.width/2 - this.width/2;
+		this.y = hero.y - this.height - 10;
+		this.paint = function(cxt){
+			cxt.drawImage(this.imgs,this.x,this.y);
+		}
+		this.step = function(){
+			this.y -= 25;
+		}
+	}
+	function Enemy(config){
+		Game.call(this,config);
+		this.x = Math.random()*(WIDTH-this.width);
+		this.y = -this.height;
+		this.paint = function(cxt){
+			cxt.drawImage(this.imgs[this.frameIndex],this.x,this.y);
+		}
+		this.step = function(){
+			if(this.down){//爆破
+				this.frameIndex++;
+				if(this.frameIndex == this.sum){
+					this.del = true;
+					score += this.score;
+					this.frameIndex = this.sum - 1;
+				}
+			}else{//正常
+				switch (this.type){
+					case 1://小飞机
+						this.frameIndex = 0;
+						this.y += 10;
+						break;
+					case 2://中飞机
+						this.frameIndex = 0;
+						this.y += 5;
+						break;
+					case 3://大飞机
+						this.frameIndex = (this.frameIndex == 0) ? 1 : 0;
+						this.y++;
+						break;
+				}
+			}
+		}
+		// 敌方飞机被撞击的规则
+		this.hit = function(compont){
+			// 我方 - 1)子弹;2)我方飞机
+			return compont.y + compont.height >= this.y &&
+				   compont.x + compont.width >= this.x &&
+				   compont.y <= this.y + this.height &&
+				   compont.x <= this.x + this.width;
+		}
+		this.canDown = function(){
+			this.life--;//生命值-1
+			// 判断生命值是否为0
+			if(this.life == 0){
+				this.down = true;//表示执行爆破动画
+				if(this.type == 3){//大飞机
+					this.frameIndex = 2;
+				}else{//小|中飞机
+					this.frameIndex = 1;
+				}
+			}
+		}
+	}
+
+		
+
+		
+	}());
+
+  </script>
+ </body>
+</html>
